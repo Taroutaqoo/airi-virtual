@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>仮想ネットアイドル あいり</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #fdfdfd;
+      text-align: center;
+      padding: 20px;
+    }
+    #chatBox {
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto;
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background-color: #fff;
+      text-align: left;
+    }
+    #inputBox {
+      width: 90%;
+      max-width: 600px;
+      margin: 10px auto;
+      display: flex;
+    }
+    #userInput {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #sendBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    img {
+      max-width: 300px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <img id="characterImage" src="image/image.png" alt="あいり">
+  <div id="chatBox"></div>
+  <div id="inputBox">
+    <input type="text" id="userInput" placeholder="あいりに話しかけてみよう">
+    <button id="sendBtn">送信</button>
+  </div>
+
+  <script>
+    let rules = {};
+    let defaultResponses = [];
+    let dataLoaded = { rules: false, defaults: false };
+
+    function allDataLoaded() {
+      return dataLoaded.rules && dataLoaded.defaults;
+    }
+
+    // rules.txt を読み込む
+    fetch('rules.txt')
+      .then(response => response.text())
+      .then(text => {
+        text.split('\n').forEach(line => {
+          const [key, value] = line.split('=');
+          if (key && value) {
+            rules[key.trim()] = value.trim();
+          }
+        });
+      })
+      .catch(error => {
+        console.error("rules.txt 読み込み失敗", error);
+      })
+      .finally(() => {
+        dataLoaded.rules = true;
+      });
+
+    // default.txt を読み込む（ルール外応答）
+    fetch('default.txt')
+      .then(response => response.text())
+      .then(text => {
+        defaultResponses = text.split('\n').filter(line => line.trim() !== '');
+      })
+      .catch(error => {
+        console.error("default.txt 読み込み失敗", error);
+      })
+      .finally(() => {
+        dataLoaded.defaults = true;
+      });
+
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const characterImage = document.getElementById('characterImage');
+
+    function addMessage(sender, message) {
+      const p = document.createElement('p');
+      p.innerHTML = `<strong>${sender}:</strong> ${message}`;
+      chatBox.appendChild(p);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function reply(input) {
+      for (let key in rules) {
+        if (input.includes(key)) {
+          return rules[key];
+        }
+      }
+      if (defaultResponses.length > 0) {
+        const index = Math.floor(Math.random() * defaultResponses.length);
+        return defaultResponses[index];
+      } else {
+        return "ごめんね、まだわからないの〜";
+      }
+    }
+
+    let availableImages = [];
+let chatCount = 0;
+
+function preloadImages() {
+  let index = 0;
+  function tryLoadNext() {
+    const testImage = new Image();
+    const src = `image/image${index}.png`;
+    testImage.onload = () => {
+      availableImages.push(src);
+      index++;
+      tryLoadNext();
+    };
+    testImage.onerror = () => {
+      console.log("読み込んだ画像数:", availableImages.length);
+    };
+    testImage.src = src;
+  }
+  tryLoadNext();
+}
+
+preloadImages();
+
+    sendBtn.onclick = () => {
+      if (!allDataLoaded()) {
+        alert("あいりが準備中だよ。もう少し待ってね！");
+        return;
+      }
+      const input = userInput.value.trim();
+      if (input) {
+        addMessage('あなた', input);
+        const response = reply(input);
+        addMessage('あいり', response);
+        userInput.value = '';
+        chatCount++;
+        if (chatCount % 10 === 0) {
+          changeImageRandomly();
+        }
+      }
+    };
+
+    userInput.addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        sendBtn.click();
+      }
+    });
+  function changeImageRandomly() {
+  if (availableImages.length > 0) {
+    const index = Math.floor(Math.random() * availableImages.length);
+    characterImage.src = availableImages[index];
+  }
+}
+</script>
+</body>
+</html>
