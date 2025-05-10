@@ -70,12 +70,8 @@
           }
         });
       })
-      .catch(error => {
-        console.error("rules.txt 読み込み失敗", error);
-      })
-      .finally(() => {
-        dataLoaded.rules = true;
-      });
+      .catch(error => console.error("rules.txt 読み込み失敗", error))
+      .finally(() => { dataLoaded.rules = true; });
 
     // default.txt を読み込む（ルール外応答）
     fetch('default.txt')
@@ -83,12 +79,8 @@
       .then(text => {
         defaultResponses = text.split('\n').filter(line => line.trim() !== '');
       })
-      .catch(error => {
-        console.error("default.txt 読み込み失敗", error);
-      })
-      .finally(() => {
-        dataLoaded.defaults = true;
-      });
+      .catch(error => console.error("default.txt 読み込み失敗", error))
+      .finally(() => { dataLoaded.defaults = true; });
 
     const chatBox = document.getElementById('chatBox');
     const userInput = document.getElementById('userInput');
@@ -104,40 +96,30 @@
 
     function reply(input) {
       for (let key in rules) {
-        if (input.includes(key)) {
-          return rules[key];
-        }
+        if (input.includes(key)) return rules[key];
       }
       if (defaultResponses.length > 0) {
-        const index = Math.floor(Math.random() * defaultResponses.length);
-        return defaultResponses[index];
-      } else {
-        return "ごめんね、まだわからないの〜";
+        return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
       }
+      return "ごめんね、まだわからないの〜";
     }
 
-    let availableImages = [];
-let chatCount = 0;
+    // 画像パスの配列（image.png から image5.png まで）
+    const imagePaths = [
+      'image/image.png',
+      'image/image1.png',
+      'image/image2.png',
+      'image/image3.png',
+      'image/image4.png',
+      'image/image5.png'
+    ];
+    let chatCount = 0;
+    const changeInterval = 3; // 何回喋るごとに切り替えるか
 
-function preloadImages() {
-  let index = 0;
-  function tryLoadNext() {
-    const testImage = new Image();
-    const src = `image/image${index}.png`;
-    testImage.onload = () => {
-      availableImages.push(src);
-      index++;
-      tryLoadNext();
-    };
-    testImage.onerror = () => {
-      console.log("読み込んだ画像数:", availableImages.length);
-    };
-    testImage.src = src;
-  }
-  tryLoadNext();
-}
-
-preloadImages();
+    function changeImageRandomly() {
+      const idx = Math.floor(Math.random() * imagePaths.length);
+      characterImage.src = imagePaths[idx];
+    }
 
     sendBtn.onclick = () => {
       if (!allDataLoaded()) {
@@ -151,23 +133,15 @@ preloadImages();
         addMessage('あいり', response);
         userInput.value = '';
         chatCount++;
-        if (chatCount % 10 === 0) {
+        if (chatCount % changeInterval === 0) {
           changeImageRandomly();
         }
       }
     };
 
     userInput.addEventListener("keypress", function(event) {
-      if (event.key === "Enter") {
-        sendBtn.click();
-      }
+      if (event.key === "Enter") sendBtn.click();
     });
-  function changeImageRandomly() {
-  if (availableImages.length > 0) {
-    const index = Math.floor(Math.random() * availableImages.length);
-    characterImage.src = availableImages[index];
-  }
-}
-</script>
+  </script>
 </body>
 </html>
